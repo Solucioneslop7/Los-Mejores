@@ -17,6 +17,34 @@
             outline: none;
             box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.6);
         }
+        /* Style for the checkbox */
+        .custom-checkbox {
+            appearance: none;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            width: 1.25em;
+            height: 1.25em;
+            border-radius: 0.25rem;
+            display: inline-block;
+            position: relative;
+            vertical-align: middle;
+            cursor: pointer;
+        }
+        .custom-checkbox:checked {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .custom-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            left: 0.375em;
+            top: 0.125em;
+            width: 0.375em;
+            height: 0.75em;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
     </style>
 </head>
 <body class="bg-blue-100 flex items-center justify-center min-h-screen p-4">
@@ -33,6 +61,15 @@
             
             <!-- Input Fields Column -->
             <div class="space-y-6">
+                <!-- Base -->
+                <div>
+                    <label for="base" class="block text-sm font-medium text-gray-700 mb-1">Base</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
+                        <input type="number" id="base" placeholder="0.00" class="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-lg custom-focus-ring transition duration-150 ease-in-out">
+                    </div>
+                </div>
+
                 <!-- Cobro -->
                 <div>
                     <label for="cobro" class="block text-sm font-medium text-gray-700 mb-1">Cobro Total</label>
@@ -68,10 +105,15 @@
                         <input type="number" id="prestamoPersonal" placeholder="0.00" class="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-lg custom-focus-ring transition duration-150 ease-in-out">
                     </div>
                 </div>
+                 <!-- Entregar Préstamo Checkbox -->
+                <div class="flex items-center mt-2">
+                    <input type="checkbox" id="entregarPrestamo" class="custom-checkbox">
+                    <label for="entregarPrestamo" class="ml-2 text-sm font-medium text-gray-700 cursor-pointer">Entregar Préstamo Personal</label>
+                </div>
             </div>
 
             <!-- Results and Configuration Column -->
-            <div class="space-y-6">
+            <div class="space-y-6 flex flex-col">
                 <!-- Configuration -->
                 <div class="bg-gray-50 p-4 rounded-lg border">
                     <h3 class="font-semibold text-gray-800 mb-3">Configuración</h3>
@@ -88,24 +130,26 @@
                 </div>
 
                 <!-- Results Display -->
-                <div class="bg-blue-50 p-6 rounded-lg border border-blue-200 space-y-4">
+                <div class="bg-blue-50 p-6 rounded-lg border border-blue-200 space-y-4 flex-grow flex flex-col justify-center">
                     <h3 class="text-lg font-semibold text-gray-800 text-center">Resultados</h3>
                     
-                    <!-- Microseguro Calculado -->
-                    <div class="flex justify-between items-center text-gray-700">
-                        <span class="font-medium">Microseguro (calculado):</span>
-                        <span id="microseguroCalculado" class="font-semibold text-lg text-gray-900">$0.00</span>
-                    </div>
-                    
-                    <hr class="border-t border-gray-200">
+                    <div class="flex-grow space-y-4">
+                        <!-- Microseguro Calculado -->
+                        <div class="flex justify-between items-center text-gray-700">
+                            <span class="font-medium">Microseguro (calculado):</span>
+                            <span id="microseguroCalculado" class="font-semibold text-lg text-gray-900">$0.00</span>
+                        </div>
+                        
+                        <hr class="border-t border-gray-200">
 
-                    <!-- Resultado Final -->
-                    <div class="text-center pt-2">
-                         <p class="text-sm text-gray-600 font-medium">Resultado Final</p>
-                        <p id="resultadoFinal" class="text-4xl font-bold text-blue-600 mt-1">$0.00</p>
+                        <!-- Resultado Final -->
+                        <div class="text-center pt-2">
+                             <p class="text-sm text-gray-600 font-medium">Entrega Total</p>
+                            <p id="resultadoFinal" class="text-4xl font-bold text-blue-600 mt-1">$0.00</p>
+                        </div>
                     </div>
                 </div>
-                 <button id="resetButton" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                 <button id="resetButton" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition duration-150 ease-in-out mt-auto">
                     Limpiar Campos
                 </button>
             </div>
@@ -114,10 +158,12 @@
 
     <script>
         // --- DOM Element References ---
+        const baseInput = document.getElementById('base');
         const cobroInput = document.getElementById('cobro');
         const prestamoInput = document.getElementById('prestamo');
         const gastoInput = document.getElementById('gasto');
         const prestamoPersonalInput = document.getElementById('prestamoPersonal');
+        const entregarPrestamoCheckbox = document.getElementById('entregarPrestamo');
         const porcentajeMicroInput = document.getElementById('porcentajeMicro');
         const resetButton = document.getElementById('resetButton');
 
@@ -127,25 +173,29 @@
         // --- Calculation Logic ---
         function calcular() {
             // 1. Get values from inputs, default to 0 if empty or invalid
+            const base = parseFloat(baseInput.value) || 0;
             const cobro = parseFloat(cobroInput.value) || 0;
             const prestamo = parseFloat(prestamoInput.value) || 0;
             const gasto = parseFloat(gastoInput.value) || 0;
             const prestamoPersonal = parseFloat(prestamoPersonalInput.value) || 0;
-            // The value from the select dropdown is read here
+            const entregarPrestamo = entregarPrestamoCheckbox.checked;
             const porcentajeMicro = parseFloat(porcentajeMicroInput.value) || 0;
 
             // 2. Calculate Microseguro
             // Formula: (Préstamo - Préstamo Personal) * % Microseguro
-            // The base for the calculation cannot be negative.
             const baseMicroseguro = Math.max(0, prestamo - prestamoPersonal);
             const microseguro = baseMicroseguro * (porcentajeMicro / 100);
 
             // 3. Calculate Final Result
-            // Formula: Cobro + Microseguro - Préstamo - Gasto
-            const resultado = cobro + microseguro - prestamo - gasto;
+            // Formula: Base + Cobro + Microseguro - Préstamo - Gasto
+            let resultado = base + cobro + microseguro - prestamo - gasto;
+            
+            // 4. Add personal loan to the total if the checkbox is ticked
+            if (entregarPrestamo) {
+                resultado += prestamoPersonal;
+            }
 
-            // 4. Update the UI
-            // Format numbers to 2 decimal places and add currency symbol
+            // 5. Update the UI
             const formatCurrency = (value) => {
                 const sign = value < 0 ? "-" : "";
                 return `${sign}$${Math.abs(value).toFixed(2)}`;
@@ -169,17 +219,18 @@
         
         // --- Reset Logic ---
         function resetFields() {
+            baseInput.value = '';
             cobroInput.value = '';
             prestamoInput.value = '';
             gastoInput.value = '';
             prestamoPersonalInput.value = '';
-            // Reset the select to its default value '5'
-            porcentajeMicroInput.value = '5';
+            entregarPrestamoCheckbox.checked = false; // Reset checkbox
+            porcentajeMicroInput.value = '5'; // Reset select
             calcular(); // Recalculate to show all zeros
         }
 
         // --- Event Listeners ---
-        const inputs = [cobroInput, prestamoInput, gastoInput, prestamoPersonalInput, porcentajeMicroInput];
+        const inputs = [baseInput, cobroInput, prestamoInput, gastoInput, prestamoPersonalInput, entregarPrestamoCheckbox, porcentajeMicroInput];
         inputs.forEach(input => {
             input.addEventListener('input', calcular);
         });
